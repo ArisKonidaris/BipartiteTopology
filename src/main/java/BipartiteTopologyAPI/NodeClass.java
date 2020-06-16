@@ -11,14 +11,15 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * A Serializable class representing the extracted description of an object
+ * A Serializable class representing the extracted description of an object.
  */
 public class NodeClass implements Serializable {
 
     private Class<?> wrappedClass; // The class of the wrapped object.
     private Class<?> proxiedInterface; // The remote proxy interface of the object.
-    private HashMap<String, Method> operationTable; // Map opid -> method descriptor object.
+    private HashMap<String, Method> operationTable; // Map String operation id -> method descriptor object.
     private Method initMethod; // The method used to initialize a node.
+    private Method defaultMethod; // The method invoked by a RPC that doesn't specify which method to execute.
     private Method processMethod; // The method used to process data.
     private Method mergeMethod; // The method used to merge two wrappedClasses.
     private Method queryMethod; // The method used to answer a query.
@@ -124,16 +125,16 @@ public class NodeClass implements Serializable {
 
         for (Method m : proxiedInterface.getMethods()) {
 
-            // check that the method is well-formed
+            // Check that the method is well-formed.
             checkRemoteMethod(m);
 
-            // generated a Universal Unique Identifier for the method/operation
+            // Generate a Universal Unique Identifier for the method/operation.
             String method_identifier = Generators
                     .nameBasedGenerator()
                     .generate(m.getName() + Arrays.toString(m.getParameterTypes()))
                     .toString();
 
-            // make method object accessible
+            // Make method object accessible.
             try {
                 m.setAccessible(true);
             } catch (SecurityException e) {
@@ -207,6 +208,14 @@ public class NodeClass implements Serializable {
 
     public Method getInitMethod() {
         return initMethod;
+    }
+
+    public void setDefaultMethod() {
+        defaultMethod = checkAuxiliaryMethod(DefaultOp.class);
+    }
+
+    public Method getDefaultMethod() {
+        return defaultMethod;
     }
 
     public Method getProccessMethod() {

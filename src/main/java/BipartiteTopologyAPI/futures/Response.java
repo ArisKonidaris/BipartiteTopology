@@ -1,6 +1,5 @@
 package BipartiteTopologyAPI.futures;
 
-
 import java.io.Serializable;
 import java.util.function.Consumer;
 

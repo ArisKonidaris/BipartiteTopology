@@ -22,6 +22,7 @@ public class FuturePool<T extends Serializable> implements Response<T>, Consumer
         if (futureMap != null)
             for (FutureResponse<T> future : futureMap)
                 future.to(consumer);
+        else throw new RuntimeException("Null futureMap on FuturePool " + this + ".");
     }
 
     @Override
@@ -29,6 +30,7 @@ public class FuturePool<T extends Serializable> implements Response<T>, Consumer
         if (futureMap != null)
             for (FutureResponse<T> future : futureMap)
                 future.toSync(consumer);
+        else throw new RuntimeException("Null futureMap on FuturePool " + this + ".");
     }
 
     @Override

@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * An abstract class of a node in the Bipartite Network. This class provides immutable information of the Network to the
- * user, like the proxies to the disjoint remote nodes of the Bipartite Network graph, the proxy to an external user
+ * user, like the proxies of the disjoint remote nodes of the Bipartite Network graph, the proxy to an external user
  * that can pose queries to this node, a map of promises made by this node to remote disjoint nodes and more basic
  * information like the id of the network, the id of the node and the number of hubs and spokes.
  *
@@ -65,7 +65,7 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
      * posses it yet. When the answer is available, {@link #fulfillBroadcastPromise(Serializable)}
      * should be called to broadcast the answer to all the disjoint nodes.
      *
-     * @param promise The promise that was made to all the disjoint remote nodse.
+     * @param promise The promise that was made to all the disjoint remote nodes.
      */
     public <T extends Serializable> void makeBroadcastPromise(PromiseResponse<T> promise) {
         if (broadcasted) {
@@ -84,7 +84,7 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
      */
     public <T extends Serializable> BroadcastValueResponse<T> fulfillBroadcastPromise(T answer) {
         if (networkContext.broadcastPromises.isEmpty()) {
-            throw new RuntimeException("No broadcast promises made to fulfill");
+            throw new RuntimeException("No broadcast promises made to fulfill.");
         } else {
             try {
                 // Make the private fields accessible.

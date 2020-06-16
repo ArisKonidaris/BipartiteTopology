@@ -1,6 +1,5 @@
 package BipartiteTopologyAPI.sites;
 
-
 /**
  * An class describing the simple Bipartite Network.
  */

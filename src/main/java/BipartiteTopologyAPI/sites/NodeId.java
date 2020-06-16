@@ -7,17 +7,20 @@ import java.io.Serializable;
  * of a node in a Bipartite Network. The NodeType determines
  * the type of the node (hub or spoke), and the nodeId integer is the
  * non-negative id of the node.
- *
+ * <p>
  * nodeType: This is the type of node in the Bipartite Network.
  * nodeId: This should always be a non-negative value.
- *
  */
 public class NodeId implements Serializable {
 
-    /** The type of the node (Hub or Spoke). This should always be a non negative value. */
+    /**
+     * The type of the node (Hub or Spoke). This should always be a non negative value.
+     */
     protected NodeType nodeType;
 
-    /** The node id. This should always be a non negative value. */
+    /**
+     * The node id. This should always be a non negative value.
+     */
     protected int nodeId;
 
     public NodeId() {
@@ -43,6 +46,7 @@ public class NodeId implements Serializable {
     }
 
     public void setNodeId(int nodeId) {
+        checkNodeId(nodeId);
         this.nodeId = nodeId;
     }
 

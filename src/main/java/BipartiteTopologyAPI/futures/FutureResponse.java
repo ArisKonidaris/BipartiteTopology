@@ -27,8 +27,8 @@ public class FutureResponse<T extends Serializable> implements Response<T>, Cons
 
     @Override
     public void toSync(Consumer<T> consumer) {
-        to(consumer);
         sync = true;
+        to(consumer);
     }
 
     @Override
@@ -40,6 +40,8 @@ public class FutureResponse<T extends Serializable> implements Response<T>, Cons
     public void accept(T value) {
         if (consumer != null)
             consumer.accept(value);
+        else
+            throw new RuntimeException("The FutureResponse " + this + " does not have callback to execute.");
     }
 
     public boolean isSync() {

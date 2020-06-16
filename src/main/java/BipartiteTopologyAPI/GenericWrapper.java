@@ -78,8 +78,14 @@ public class GenericWrapper implements Node {
      */
     protected boolean processData;
 
+    /**
+     * The current disjoint node caller.
+     */
     protected NodeId currentCaller;
 
+    /**
+     * The current remote procedure call of the current caller.
+     */
     protected RemoteCallIdentifier currentRPC;
 
     public GenericWrapper(NodeId nodeId, NodeInstance node, Network network) {
@@ -142,7 +148,7 @@ public class GenericWrapper implements Node {
             proxyMap.put(i, GenericProxy.forNode(proxyInterface, this, network, proxyIP));
         }
 
-        // Braodcast proxy creation.
+        // Broadcast proxy creation.
         broadcastProxy = GenericProxy.forNode(proxyInterface,
                 this,
                 network,
@@ -151,7 +157,6 @@ public class GenericWrapper implements Node {
 
         // Querier proxy creation.
         querierProxy = GenericProxy.forNode(querierInterface, this, network, null);
-
 
         try {
             Field networkContext = fields.get(0);
@@ -172,12 +177,11 @@ public class GenericWrapper implements Node {
             wrapperField.set(node, this);
         } catch (SecurityException | IllegalAccessException e) {
             throw new RuntimeException(
-                    String.format("Something went wrong while injecting the NetworkContext in wrapped class %s",
+                    String.format("Something went wrong while injecting the NetworkContext and the Generic Wrapper" +
+                                    " into the wrapped class %s",
                             nodeClass.getWrappedClass()), e);
         }
         assert !proxyMap.isEmpty();
-
-
     }
 
     @Override
@@ -230,11 +234,15 @@ public class GenericWrapper implements Node {
                     } else System.out.println("No futures for the responseCallNumber " + rpc.getCallNumber());
                 } else {
                     Method m = nodeClass.getOperationTable().get(rpc.getOperation());
-                    Object[] args = (Object[]) tuple;
                     if (rpc.getCallType().equals(CallType.ONE_WAY)) {
-                        m.invoke(node, args);
+                        if (m == null) {
+                            m = nodeClass.getDefaultMethod();
+                            m.invoke(node, tuple);
+                        } else {
+                            m.invoke(node, (Object[]) tuple);
+                        }
                     } else if (rpc.getCallType().equals(CallType.TWO_WAY)) {
-                        Object ret = m.invoke(node, args);
+                        Object ret = m.invoke(node, (Object[]) tuple);
                         assert (ret instanceof ValueResponse ||
                                 ret instanceof PromiseResponse ||
                                 ret instanceof BroadcastValueResponse);
@@ -387,12 +395,17 @@ public class GenericWrapper implements Node {
         return processData;
     }
 
+    public GenericWrapper setDefaultOp() {
+        nodeClass.setDefaultMethod();
+        return this;
+    }
+
     private void checkNewFutures() {
         if (!newFutures.isEmpty()) {
             for (FutureResponse<Serializable> newFuture : newFutures)
                 if (newFuture.isSync())
                     syncFutures += 1;
-            if (syncFutures > 0 || !isBlocked())
+            if (syncFutures > 0 && !isBlocked())
                 block();
             newFutures.clear();
         }

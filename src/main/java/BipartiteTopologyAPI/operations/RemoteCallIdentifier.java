@@ -2,6 +2,9 @@ package BipartiteTopologyAPI.operations;
 
 import java.io.Serializable;
 
+/**
+ * A class that uniquely defines a remote procedure call in the Bipartite topology.
+ */
 public class RemoteCallIdentifier implements Serializable {
 
     CallType call_type;

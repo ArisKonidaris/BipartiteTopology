@@ -77,7 +77,6 @@ public class BufferingWrapper<D extends Serializable> extends GenericWrapper {
             }
         }
         dataBuffer = mergedBuffer;
-
     }
 
     public ArrayDeque<D> getDataBuffer() {

@@ -13,17 +13,17 @@ public class BroadcastValueResponse<T extends Serializable> implements Response<
     /**
      * The network to send the response to.
      */
-    private Network network;
+    private final Network network;
 
     /**
      * The source of the response.
      */
-    private NodeId source;
+    private final NodeId source;
 
     /**
-     * The destination of the response.
+     * The destination and operation pairs of the response.
      */
-    private Map<NodeId, RemoteCallIdentifier> operations;
+    private final Map<NodeId, RemoteCallIdentifier> operations;
 
     /**
      * The actual Serializable broadcast response value.
