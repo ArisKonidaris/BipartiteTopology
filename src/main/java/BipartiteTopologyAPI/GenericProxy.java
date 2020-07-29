@@ -16,10 +16,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class GenericProxy implements InvocationHandler, Serializable {
 
@@ -172,7 +169,7 @@ public class GenericProxy implements InvocationHandler, Serializable {
     }
 
     public Map<Method, String> getMethodIds() {
-        return methodIds;
+        return Collections.unmodifiableMap(methodIds);
     }
 
 }
