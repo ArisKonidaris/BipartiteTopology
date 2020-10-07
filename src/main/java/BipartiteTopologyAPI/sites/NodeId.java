@@ -63,4 +63,8 @@ public class NodeId implements Serializable {
         return !isSpoke();
     }
 
+    @Override
+    public String toString() {
+        return (isSpoke() ? "SPOKE: " : "HUB: ") + nodeId;
+    }
 }

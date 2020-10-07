@@ -231,7 +231,11 @@ public class GenericWrapper implements Node {
                             future.remove(source.getNodeId());
                             if (future.isEmpty()) futures.remove(rpc.getCallNumber());
                         } else System.out.println("No such future from source " + source.getNodeId());
-                    } else System.out.println("No futures for the responseCallNumber " + rpc.getCallNumber());
+                    } else {
+                        System.out.println("(Network: " + network.describe().getNetworkId() + ")" + "(" + nodeId +
+                                ") No futures for the responseCallNumber " + rpc.getCallNumber() + " from caller " +
+                                currentCaller);
+                    }
                 } else {
                     Method m = nodeClass.getOperationTable().get(rpc.getOperation());
                     if (rpc.getCallType().equals(CallType.ONE_WAY)) {
@@ -262,6 +266,7 @@ public class GenericWrapper implements Node {
                 }
                 checkNewFutures();
             } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
                 throw new RuntimeException("Failed wrapper.receiveMsg", e);
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();

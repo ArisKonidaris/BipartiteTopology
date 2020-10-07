@@ -69,11 +69,10 @@ public class GenericProxy implements InvocationHandler, Serializable {
                     response = new FuturePool<>(newFutures.values());
                     rpc.setCallType(CallType.TWO_WAY);
                     rpc.setCallNumber(futureCounter);
-                    if (futureCounter == Long.MAX_VALUE) {
+                    if (futureCounter == Long.MAX_VALUE)
                         futureCounter = 0L;
-                    } else {
+                    else
                         futureCounter++;
-                    }
                 } else {
                     rpc.setCallType(CallType.ONE_WAY);
                 }
