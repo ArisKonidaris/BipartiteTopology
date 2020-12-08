@@ -47,4 +47,9 @@ public class RemoteCallIdentifier implements Serializable {
     public void setCallNumber(Long call_number) {
         this.call_number = call_number;
     }
+
+    @Override
+    public String toString() {
+        return "RemoteCallIdentifier(" + call_type + ", " + operation + ", " + call_number + ")";
+    }
 }

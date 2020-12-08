@@ -1,10 +1,7 @@
 package BipartiteTopologyAPI;
 
 import BipartiteTopologyAPI.annotations.Inject;
-import BipartiteTopologyAPI.futures.BroadcastValueResponse;
-import BipartiteTopologyAPI.futures.FutureResponse;
-import BipartiteTopologyAPI.futures.PromiseResponse;
-import BipartiteTopologyAPI.futures.ValueResponse;
+import BipartiteTopologyAPI.futures.*;
 import BipartiteTopologyAPI.network.Mergeable;
 import BipartiteTopologyAPI.operations.CallType;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
@@ -249,7 +246,8 @@ public class GenericWrapper implements Node {
                         Object ret = m.invoke(node, (Object[]) tuple);
                         assert (ret instanceof ValueResponse ||
                                 ret instanceof PromiseResponse ||
-                                ret instanceof BroadcastValueResponse);
+                                ret instanceof BroadcastValueResponse ||
+                                ret instanceof EmptyResponse);
                         if (ret instanceof ValueResponse) {
                             ValueResponse resp = (ValueResponse) ret;
                             network.send(nodeId,

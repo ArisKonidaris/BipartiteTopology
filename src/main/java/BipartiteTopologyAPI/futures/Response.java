@@ -38,4 +38,8 @@ public interface Response<T extends Serializable> {
         return new ValueResponse<>(value);
     }
 
+    static <R extends Serializable> Response<R> noResponse() {
+        return new EmptyResponse<>();
+    }
+
 }
