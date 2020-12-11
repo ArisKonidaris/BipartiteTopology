@@ -86,6 +86,9 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
         if (networkContext.broadcastPromises.isEmpty()) {
             throw new RuntimeException("No broadcast promises made to fulfill.");
         } else {
+            assert(networkContext.broadcastPromises.size() ==
+                    ((genericWrapper.nodeId.isHub()) ? getNumberOfSpokes() : getNumberOfHubs())
+            );
             try {
                 // Make the private fields accessible.
                 Field networkField = networkContext.broadcastPromises.get(0).getClass().getDeclaredField("network");
