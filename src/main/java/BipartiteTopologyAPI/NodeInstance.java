@@ -97,6 +97,7 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
                         ((genericWrapper.nodeId.isHub()) ? getNumberOfSpokes() : getNumberOfHubs())
                 );
                 e.printStackTrace();
+                throw e;
             }
 
             try {
