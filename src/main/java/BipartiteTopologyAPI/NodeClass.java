@@ -218,7 +218,7 @@ public class NodeClass implements Serializable {
         return defaultMethod;
     }
 
-    public Method getProccessMethod() {
+    public Method getProcessMethod() {
         return processMethod;
     }
 

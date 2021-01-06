@@ -13,7 +13,10 @@ import java.util.Iterator;
 
 public class BufferingWrapper<D extends Serializable> extends GenericWrapper {
 
+    private int maxBufferSize = 60000;
     private ArrayDeque<D> dataBuffer;
+    private double meanBufferSize = 0;
+    private long tuplesProcessed = 0;
 
     public BufferingWrapper(NodeId nodeId, NodeInstance node, Network network) {
         super(nodeId, node, network);
@@ -33,20 +36,32 @@ public class BufferingWrapper<D extends Serializable> extends GenericWrapper {
     @Override
     public void receiveTuple(Serializable tuple) {
         if (isBlocked()) {
-            dataBuffer.add((D) tuple);
+            storePoint(tuple);
         } else {
             if (dataBuffer.isEmpty()) {
                 super.receiveTuple(tuple);
             } else {
-                dataBuffer.add((D) tuple);
+                storePoint(tuple);
                 processFromDataBuffer();
             }
         }
+        updateBufferStats();
+    }
+
+    private void storePoint(Serializable tuple) {
+        dataBuffer.add((D) tuple);
+        if (dataBuffer.size() == maxBufferSize + 1)
+            dataBuffer.remove();
     }
 
     private void processFromDataBuffer() {
         while (!isBlocked() && !dataBuffer.isEmpty())
             super.receiveTuple(dataBuffer.pop());
+    }
+
+    private void updateBufferStats() {
+        tuplesProcessed += 1;
+        meanBufferSize = meanBufferSize + (1 / (1.0 * tuplesProcessed)) * (dataBuffer.size() - meanBufferSize);
     }
 
     @Override
@@ -81,6 +96,10 @@ public class BufferingWrapper<D extends Serializable> extends GenericWrapper {
 
     public ArrayDeque<D> getDataBuffer() {
         return dataBuffer;
+    }
+
+    public double getMeanBufferSize() {
+        return meanBufferSize;
     }
 
     public void setDataBuffer(ArrayDeque<D> dataBuffer) {

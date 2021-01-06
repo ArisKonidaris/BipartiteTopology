@@ -277,7 +277,7 @@ public class GenericWrapper implements Node {
         try {
             if (nonEmpty()) {
                 Object[] args = (Object[]) tuple;
-                nodeClass.getProccessMethod().invoke(node, args);
+                nodeClass.getProcessMethod().invoke(node, args);
                 checkNewFutures();
             }
         } catch (InvocationTargetException | IllegalAccessException e) {

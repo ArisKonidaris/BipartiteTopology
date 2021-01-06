@@ -26,12 +26,12 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
     public final int nodeId;
 
     /**
-     * The number of workers of the Bipartite Network.
+     * The number of hubs of the Bipartite Network.
      */
     public final int numberOfHubs;
 
     /**
-     * The number of hubs of the Bipartite Network.
+     * The number of spokes of the Bipartite Network.
      */
     public final int numberOfSpokes;
 

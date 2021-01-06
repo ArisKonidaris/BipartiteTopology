@@ -48,6 +48,10 @@ public class RemoteCallIdentifier implements Serializable {
         this.call_number = call_number;
     }
 
+    public int getSize() {
+        return 4 + 8 * operation.length() + 8;
+    }
+
     @Override
     public String toString() {
         return "RemoteCallIdentifier(" + call_type + ", " + operation + ", " + call_number + ")";
