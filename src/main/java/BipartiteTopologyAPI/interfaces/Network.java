@@ -1,4 +1,4 @@
-package BipartiteTopologyAPI.network;
+package BipartiteTopologyAPI.interfaces;
 
 import BipartiteTopologyAPI.sites.NodeId;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;

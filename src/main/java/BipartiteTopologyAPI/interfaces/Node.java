@@ -1,7 +1,7 @@
-package BipartiteTopologyAPI.network;
+package BipartiteTopologyAPI.interfaces;
 
-import BipartiteTopologyAPI.sites.NodeId;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
+import BipartiteTopologyAPI.sites.NodeId;
 
 import java.io.Serializable;
 

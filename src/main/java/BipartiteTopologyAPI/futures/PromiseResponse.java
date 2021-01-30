@@ -1,6 +1,6 @@
 package BipartiteTopologyAPI.futures;
 
-import BipartiteTopologyAPI.network.Network;
+import BipartiteTopologyAPI.interfaces.Network;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
 import BipartiteTopologyAPI.sites.NodeId;
 

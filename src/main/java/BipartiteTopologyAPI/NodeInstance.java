@@ -2,14 +2,20 @@ package BipartiteTopologyAPI;
 
 import BipartiteTopologyAPI.annotations.Inject;
 import BipartiteTopologyAPI.futures.BroadcastValueResponse;
+import BipartiteTopologyAPI.futures.BroadcastValuesResponses;
 import BipartiteTopologyAPI.futures.PromiseResponse;
-import BipartiteTopologyAPI.network.Network;
+import BipartiteTopologyAPI.futures.PromisedResponses;
+import BipartiteTopologyAPI.interfaces.Network;
+import BipartiteTopologyAPI.operations.CallType;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
 import BipartiteTopologyAPI.sites.NodeId;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,104 +38,19 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
     private boolean broadcasted = false;
 
     /**
-     * A method used by the user when it makes a promise to a disjoint remote node of the Bipartite Network graph. This
-     * should be used when the current node does not posses the answer to a question of a disjoint remote node, but will
-     * arrive (or produced) at a later time. When the answer is available, {@link #fulfillPromise(long, Serializable)}
-     * should be called by the user to send back the answer.
+     * A private method that used Java Reflection in order to set up a promise.
      *
-     * @param promiseId The unique id of a promise.
-     * @param promise   The promise that was made to the disjoint remote node.
+     * @param promise The promise to be set up.
      */
-    public <T extends Serializable> void makePromise(long promiseId, PromiseResponse<T> promise) {
-        setPromise(promise);
-        networkContext.promises.put(promiseId, promise);
-    }
-
-    /**
-     * The method to call upon the arrival of an answer to a previous request made by a disjoint remote node. This
-     * method fulfills the promise given by the current node to a disjoint remote node of the Bipartite Network.
-     *
-     * @param promiseId The unique id of a promise.
-     * @param answer    The answer to the promise.
-     */
-    public <T extends Serializable> void fulfillPromise(long promiseId, T answer) {
-        if (networkContext.promises.containsKey(promiseId)) {
-            PromiseResponse promise = networkContext.promises.remove(promiseId);
-            promise.sendAnswer(answer);
-        }
-    }
-
-    /**
-     * A method used by the user when it makes a broadcast promise to a disjoint remote node of the Bipartite Network.
-     * This should be used when the answer for a specific node is the same for all the disjoint nodes, but do not
-     * posses it yet. When the answer is available, {@link #fulfillBroadcastPromise(Serializable)}
-     * should be called to broadcast the answer to all the disjoint nodes.
-     *
-     * @param promise The promise that was made to all the disjoint remote nodes.
-     */
-    public <T extends Serializable> void makeBroadcastPromise(PromiseResponse<T> promise) {
-        if (broadcasted) {
-            networkContext.broadcastPromises.clear();
-            broadcasted = false;
-        }
-        setPromise(promise);
-        networkContext.broadcastPromises.add(promise);
-    }
-
-    /**
-     * The method to call upon the arrival of an answer that needs to be broadcasted to all the disjoint nodes of the
-     * Bipartite Network.
-     *
-     * @param answer The answer to the broadcast promise.
-     */
-    public <T extends Serializable> BroadcastValueResponse<T> fulfillBroadcastPromise(T answer) {
-        if (networkContext.broadcastPromises.isEmpty()) {
-            throw new RuntimeException("No broadcast promises made to fulfill.");
-        } else {
-
-            // Cluster debugging.
-            try {
-                assert(networkContext.broadcastPromises.size() ==
-                        ((genericWrapper.nodeId.isHub()) ? getNumberOfSpokes() : getNumberOfHubs())
-                );
-            } catch (Exception e) {
-                System.out.println(networkContext.broadcastPromises.size() + " != " +
-                        ((genericWrapper.nodeId.isHub()) ? getNumberOfSpokes() : getNumberOfHubs())
-                );
-                e.printStackTrace();
-                throw e;
-            }
-
-            try {
-                // Make the private fields accessible.
-                Field networkField = networkContext.broadcastPromises.get(0).getClass().getDeclaredField("network");
-                networkField.setAccessible(true);
-                Field sourceField = networkContext.broadcastPromises.get(0).getClass().getDeclaredField("source");
-                sourceField.setAccessible(true);
-                Field destField = networkContext.broadcastPromises.get(0).getClass().getDeclaredField("destination");
-                destField.setAccessible(true);
-                Field rpcField = networkContext.broadcastPromises.get(0).getClass().getDeclaredField("rpc");
-                rpcField.setAccessible(true);
-
-                // Get the private fields.
-                Network net = (Network) networkField.get(networkContext.broadcastPromises.get(0));
-                NodeId src = (NodeId) sourceField.get(networkContext.broadcastPromises.get(0));
-                Map<NodeId, RemoteCallIdentifier> rpcs = new HashMap<>();
-                for (PromiseResponse promise : networkContext.broadcastPromises) {
-                    rpcs.put((NodeId) destField.get(promise), (RemoteCallIdentifier) rpcField.get(promise));
-                }
-
-                broadcasted = true;
-                return new BroadcastValueResponse<>(net, src, rpcs, answer);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
     private <T extends Serializable> void setPromise(PromiseResponse<T> promise) {
         try {
+            assert genericWrapper.currentRPC.getCallType().equals(CallType.TWO_WAY) :
+                    "No promise can be made, as " + ((genericWrapper.nodeId.isHub()) ? "Spoke " : "Hub ") +
+                            getCurrentCaller() + " of network " + getNetworkID() +
+                            " does not wait for any answer from " + genericWrapper.nodeId;
+            Field rpcField = promise.getClass().getDeclaredField("rpc");
+            rpcField.setAccessible(true);
+            rpcField.set(promise, new RemoteCallIdentifier(genericWrapper.currentRPC.getCallNumber()));
             Field networkField = promise.getClass().getDeclaredField("network");
             networkField.setAccessible(true);
             networkField.set(promise, genericWrapper.network);
@@ -139,11 +60,164 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
             Field destinationField = promise.getClass().getDeclaredField("destination");
             destinationField.setAccessible(true);
             destinationField.set(promise, genericWrapper.currentCaller);
-            Field rpcField = promise.getClass().getDeclaredField("rpc");
-            rpcField.setAccessible(true);
-            rpcField.set(promise, new RemoteCallIdentifier(genericWrapper.currentRPC.getCallNumber()));
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * A method used by the user when it makes a promise to a disjoint remote node of the Bipartite Network graph. This
+     * should be used when the current node does not posses the answer to a question of a disjoint remote node, but will
+     * arrive (or produced) at a later time. When the answer(s) is (are) available, then {@link #fulfillPromises(List)}
+     * should be called by the user to send back the answer.
+     *
+     * @return The pair with the id of the disjoint node that invoked this node instance along with the promise id that
+     * it was made to it.
+     */
+    public <T extends Serializable> PromiseResponse<T> makePromise() {
+        PromiseResponse<T> promise = new PromiseResponse<>();
+        setPromise(promise);
+        int promiseId = 0;
+        if (!networkContext.promises.containsKey(getCurrentCaller()))
+            networkContext.promises.put(getCurrentCaller(), new HashMap<>());
+        else
+            promiseId = networkContext.promises.get(getCurrentCaller()).size() + 1;
+        networkContext.promises.get(getCurrentCaller()).put(promiseId, promise);
+        return promise;
+    }
+
+    /**
+     * This method fulfills the promises given by the current node to the disjoint remote node of the Bipartite Network.
+     *
+     * @param answers The answers to the promises made to the disjoint remote node of the Bipartite Network.
+     */
+    public <T extends Serializable> PromisedResponses<T> fulfillPromises(int nodeId, List<T> answers)
+            throws NoSuchFieldException, IllegalAccessException {
+        if (networkContext.promises.containsKey(nodeId)) {
+            HashMap<Integer, PromiseResponse> promises = (HashMap<Integer, PromiseResponse>) networkContext.promises.get(nodeId).clone();
+            assert (answers.size() == promises.size());
+            PromisedResponses<T> responses = new PromisedResponses<>();
+            Field prField = responses.getClass().getDeclaredField("promisedResponses");
+            prField.setAccessible(true);
+            prField.set(responses, new ArrayList<>(promises.values()));
+            Field anField = responses.getClass().getDeclaredField("answers");
+            anField.setAccessible(true);
+            anField.set(responses, answers);
+            networkContext.promises.get(nodeId).clear();
+            return responses;
+        } else {
+            throw new RuntimeException("The " +
+                    ((genericWrapper.nodeId.isHub()) ? "Hub " : "Spoke ") + getNodeId() + " of network " +
+                    getNetworkID() + " has not made any promises to " +
+                    ((genericWrapper.nodeId.isHub()) ? "Spoke " : "Hub ") + nodeId + ".");
+        }
+    }
+
+    public <T extends Serializable> PromisedResponses<T> fulfillPromises(List<T> answers)
+            throws NoSuchFieldException, IllegalAccessException {
+        return fulfillPromises(getCurrentCaller(), answers);
+    }
+
+    /**
+     * This method fulfills a promise given by the current node to α disjoint remote node of the Bipartite Network.
+     *
+     * @param destination The id of the node and the promise to be fulfilled.
+     * @param answer      The answer to the promise made to the disjoint remote node of the Bipartite Network.
+     */
+    public void fulfillPromise(Pair<Integer, Integer> destination, Serializable[] answer) {
+        if (networkContext.promises.containsKey(destination.getKey())) {
+            HashMap<Integer, PromiseResponse> promises = networkContext.promises.get(destination.getKey());
+            if (promises.containsKey(destination.getValue())) {
+                promises.get(destination.getValue()).sendAnswer(answer);
+            } else {
+                throw new RuntimeException("The " +
+                        ((genericWrapper.nodeId.isHub()) ? "Hub " : "Spoke ") + getNodeId() + " of network " +
+                        getNetworkID() + " has not made a promise with id " + destination.getValue() + " to caller " +
+                        ((genericWrapper.nodeId.isHub()) ? "Spoke " : "Hub ") + destination.getKey() + ".");
+            }
+        } else {
+            throw new RuntimeException("The " +
+                    ((genericWrapper.nodeId.isHub()) ? "Hub " : "Spoke ") + getNodeId() + " of network " +
+                    getNetworkID() + " has not made a promise to " +
+                    ((genericWrapper.nodeId.isHub()) ? "Spoke " : "Hub ") + destination.getKey() + ".");
+        }
+    }
+
+    public void fulfillPromise(int promiseId, Serializable[] answer) {
+        fulfillPromise(Pair.of(getCurrentCaller(), promiseId), answer);
+    }
+
+    /**
+     * A method used by the user when it makes a broadcast promise to a disjoint remote node of the Bipartite Network.
+     * This should be used when the answer for a specific node is the same for all the disjoint nodes, but do not posses
+     * it yet. When the answer is available, {@link #fulfillBroadcastPromises(List)} should be called to broadcast the
+     * answer to all the disjoint nodes.
+     */
+    public <T extends Serializable> PromiseResponse<T> makeBroadcastPromise() {
+        if (broadcasted) {
+            for (HashMap<Integer, PromiseResponse> bPromises : networkContext.broadcastPromises.values())
+                bPromises.clear();
+            broadcasted = false;
+        }
+        PromiseResponse<T> promise = new PromiseResponse<>();
+        setPromise(promise);
+        int promiseId = 0;
+        if (!networkContext.broadcastPromises.containsKey(getCurrentCaller()))
+            networkContext.broadcastPromises.put(getCurrentCaller(), new HashMap<>());
+        else
+            promiseId = networkContext.broadcastPromises.get(getCurrentCaller()).size() + 1;
+        networkContext.broadcastPromises.get(getCurrentCaller()).put(promiseId, promise);
+        return promise;
+    }
+
+    /**
+     * The method to call upon the arrival of an answer that needs to be broadcasted to all the disjoint nodes of the
+     * Bipartite Network.
+     *
+     * @param answer The answer to the broadcast promise.
+     */
+    public <T extends Serializable> BroadcastValuesResponses<T> fulfillBroadcastPromises(List<T> answer) {
+        if (networkContext.broadcastPromises.isEmpty()) {
+            throw new RuntimeException("No broadcast promises made to fulfill.");
+        } else {
+            try {
+                // Make the private fields accessible.
+                PromiseResponse r = networkContext.broadcastPromises
+                        .entrySet().iterator().next().getValue()
+                        .entrySet().iterator().next().getValue();
+                Field networkField = r.getClass().getDeclaredField("network");
+                networkField.setAccessible(true);
+                Field sourceField = r.getClass().getDeclaredField("source");
+                sourceField.setAccessible(true);
+                Field destField = r.getClass().getDeclaredField("destination");
+                destField.setAccessible(true);
+                Field rpcField = r.getClass().getDeclaredField("rpc");
+                rpcField.setAccessible(true);
+
+                // Get the private fields.
+                Network net = (Network) networkField.get(r);
+                NodeId src = (NodeId) sourceField.get(r);
+
+
+                ArrayList<ArrayList<PromiseResponse>> pr = new ArrayList<>();
+                for (HashMap<Integer, PromiseResponse> entry : networkContext.broadcastPromises.values())
+                    pr.add(new ArrayList<>(entry.values()));
+                ArrayList<BroadcastValueResponse<T>> bResponses = new ArrayList<>();
+                for (int i = 0; i < pr.get(0).size(); i++) {
+                    Map<NodeId, RemoteCallIdentifier> rpcs = new HashMap<>();
+                    for (ArrayList<PromiseResponse> promiseResponses : pr) {
+                        PromiseResponse p = promiseResponses.get(i);
+                        rpcs.put((NodeId) destField.get(p), (RemoteCallIdentifier) rpcField.get(p));
+                    }
+                    bResponses.add(new BroadcastValueResponse<>(net, src, rpcs, answer.get(i)));
+                }
+
+                broadcasted = true;
+                return new BroadcastValuesResponses<>(bResponses);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+                return null;
+            }
         }
     }
 
@@ -179,6 +253,10 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
 
     public int getCurrentCaller() {
         return genericWrapper.currentCaller.getNodeId();
+    }
+
+    public boolean isBlocked() {
+        return genericWrapper.isBlocked();
     }
 
     public void blockStream() {

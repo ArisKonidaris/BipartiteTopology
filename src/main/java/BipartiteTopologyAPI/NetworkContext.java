@@ -3,7 +3,6 @@ package BipartiteTopologyAPI;
 import BipartiteTopologyAPI.futures.PromiseResponse;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,12 +52,12 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
     /**
      * A map of promises that this node has made to the disjoint nodes of the Bipartite Graph.
      */
-    public final Map<Long, PromiseResponse> promises;
+    public final HashMap<Integer, HashMap<Integer, PromiseResponse>> promises;
 
     /**
      * A map of promises that this node has made to the disjoint nodes of the Bipartite Graph.
      */
-    public final ArrayList<PromiseResponse> broadcastPromises;
+    public final HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises;
 
     private NetworkContext(int networkId,
                            int numberOfHubs,
@@ -67,8 +66,8 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
                            QueryIfc querier,
                            Map<Integer, ProxyIfc> proxies,
                            ProxyIfc broadcastProxy,
-                           Map<Long, PromiseResponse> promises,
-                           ArrayList<PromiseResponse> broadcastPromises) {
+                           HashMap<Integer, HashMap<Integer, PromiseResponse>> promises,
+                           HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises) {
         this.networkId = networkId;
         this.numberOfHubs = numberOfHubs;
         this.numberOfSpokes = numberOfSpokes;
@@ -95,7 +94,7 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
                 proxies,
                 broadcastProxy,
                 new HashMap<>(),
-                new ArrayList<>());
+                new HashMap<>());
     }
 
     static public <PrIfc, QuIfc> NetworkContext<PrIfc, QuIfc> forNode(int networkId,
@@ -105,8 +104,8 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
                                                                       QuIfc querier,
                                                                       Map<Integer, PrIfc> proxies,
                                                                       PrIfc broadcastProxy,
-                                                                      Map<Long, PromiseResponse> promises,
-                                                                      ArrayList<PromiseResponse> broadcastPromises) {
+                                                                      HashMap<Integer, HashMap<Integer, PromiseResponse>> promises,
+                                                                      HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises) {
         return new NetworkContext<>(networkId,
                 numberOfHubs,
                 numberOfSpokes,

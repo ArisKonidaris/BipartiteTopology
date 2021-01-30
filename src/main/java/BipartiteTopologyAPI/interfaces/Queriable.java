@@ -1,4 +1,4 @@
-package BipartiteTopologyAPI.network;
+package BipartiteTopologyAPI.interfaces;
 
 import java.io.Serializable;
 

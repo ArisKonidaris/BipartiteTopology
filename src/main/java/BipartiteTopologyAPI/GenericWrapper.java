@@ -2,11 +2,11 @@ package BipartiteTopologyAPI;
 
 import BipartiteTopologyAPI.annotations.Inject;
 import BipartiteTopologyAPI.futures.*;
-import BipartiteTopologyAPI.network.Mergeable;
+import BipartiteTopologyAPI.interfaces.Mergeable;
 import BipartiteTopologyAPI.operations.CallType;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
-import BipartiteTopologyAPI.network.Network;
-import BipartiteTopologyAPI.network.Node;
+import BipartiteTopologyAPI.interfaces.Network;
+import BipartiteTopologyAPI.interfaces.Node;
 import BipartiteTopologyAPI.sites.NodeId;
 import BipartiteTopologyAPI.sites.NodeType;
 
@@ -210,6 +210,7 @@ public class GenericWrapper implements Node {
 
     @Override
     public void receiveMsg(NodeId source, RemoteCallIdentifier rpc, Serializable tuple) {
+//        System.out.println("\nNode " + getNodeId() + " received rpc " + rpc + " from node " + source);
         if (nonEmpty()) {
             try {
                 currentCaller = source;
@@ -226,8 +227,13 @@ public class GenericWrapper implements Node {
                                     unblock();
                             }
                             future.remove(source.getNodeId());
-                            if (future.isEmpty()) futures.remove(rpc.getCallNumber());
-                        } else System.out.println("No such future from source " + source.getNodeId());
+                            if (future.isEmpty())
+                                futures.remove(rpc.getCallNumber());
+                        } else
+                            System.out.println(
+                                    "No future with id " + rpc.getCallNumber() + " for " +
+                                    nodeId + " from source " + source
+                            );
                     } else {
                         System.out.println("(Network: " + network.describe().getNetworkId() + ")" + "(" + nodeId +
                                 ") No futures for the responseCallNumber " + rpc.getCallNumber() + " from caller " +
@@ -236,17 +242,16 @@ public class GenericWrapper implements Node {
                 } else {
                     Method m = nodeClass.getOperationTable().get(rpc.getOperation());
                     if (rpc.getCallType().equals(CallType.ONE_WAY)) {
-                        if (m == null) {
-                            m = nodeClass.getDefaultMethod();
-                            m.invoke(node, tuple);
-                        } else {
+                        if (m == null)
+                            nodeClass.getDefaultMethod().invoke(node, tuple);
+                        else
                             m.invoke(node, (Object[]) tuple);
-                        }
                     } else if (rpc.getCallType().equals(CallType.TWO_WAY)) {
                         Object ret = m.invoke(node, (Object[]) tuple);
                         assert (ret instanceof ValueResponse ||
                                 ret instanceof PromiseResponse ||
-                                ret instanceof BroadcastValueResponse ||
+                                ret instanceof PromisedResponses ||
+                                ret instanceof BroadcastValuesResponses ||
                                 ret instanceof EmptyResponse);
                         if (ret instanceof ValueResponse) {
                             ValueResponse resp = (ValueResponse) ret;
@@ -254,8 +259,11 @@ public class GenericWrapper implements Node {
                                     source,
                                     new RemoteCallIdentifier(CallType.RESPONSE, null, rpc.getCallNumber()),
                                     resp.getValue());
-                        } else if (ret instanceof BroadcastValueResponse) {
-                            BroadcastValueResponse resp = (BroadcastValueResponse) ret;
+                        } else if (ret instanceof PromisedResponses) {
+                            PromisedResponses resp = (PromisedResponses) ret;
+                            resp.sendAnswers();
+                        } else if (ret instanceof BroadcastValuesResponses) {
+                            BroadcastValuesResponses resp = (BroadcastValuesResponses) ret;
                             resp.broadcastResponse();
                         }
                     } else {
@@ -263,11 +271,9 @@ public class GenericWrapper implements Node {
                     }
                 }
                 checkNewFutures();
-            } catch (IllegalAccessException | InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                 e.printStackTrace();
                 throw new RuntimeException("Failed wrapper.receiveMsg", e);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -280,10 +286,9 @@ public class GenericWrapper implements Node {
                 nodeClass.getProcessMethod().invoke(node, args);
                 checkNewFutures();
             }
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException("Failed wrapper.receiveTuple", e);
-        } catch (IllegalArgumentException e) {
+        } catch (InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
             e.printStackTrace();
+            throw new RuntimeException("Failed wrapper.receiveTuple", e);
         }
     }
 
@@ -342,11 +347,17 @@ public class GenericWrapper implements Node {
     }
 
     protected void block() {
-        processData = false;
+        if (!isBlocked())
+            processData = false;
+        else
+            throw new RuntimeException("Node is already blocked.");
     }
 
     protected void unblock() {
-        processData = true;
+        if (isBlocked())
+            processData = true;
+        else
+            throw new RuntimeException("Node is already unblocked.");
     }
 
     public NodeInstance getNode() {

@@ -1,6 +1,6 @@
 package BipartiteTopologyAPI;
 
-import BipartiteTopologyAPI.network.Mergeable;
+import BipartiteTopologyAPI.interfaces.Mergeable;
 import java.io.Serializable;
 
 public interface DataBuffer<T extends Serializable> extends Mergeable, Serializable {

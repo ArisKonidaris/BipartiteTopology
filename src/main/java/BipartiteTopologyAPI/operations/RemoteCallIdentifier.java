@@ -7,29 +7,30 @@ import java.io.Serializable;
  */
 public class RemoteCallIdentifier implements Serializable {
 
-    CallType call_type;
+    CallType callType;
     String operation;
-    long call_number;
+    long callNumber;
 
     public RemoteCallIdentifier() {
+        this(null, null, -1);
     }
 
-    public RemoteCallIdentifier(long call_number) {
-        this(CallType.RESPONSE, null, call_number);
+    public RemoteCallIdentifier(long callNumber) {
+        this(CallType.RESPONSE, null, callNumber);
     }
 
-    public RemoteCallIdentifier(CallType call_type, String operation, long call_number) {
-        this.call_type = call_type;
+    public RemoteCallIdentifier(CallType callType, String operation, long callNumber) {
+        this.callType = callType;
         this.operation = operation;
-        this.call_number = call_number;
+        this.callNumber = callNumber;
     }
 
     public CallType getCallType() {
-        return call_type;
+        return callType;
     }
 
-    public void setCallType(CallType call_type) {
-        this.call_type = call_type;
+    public void setCallType(CallType callType) {
+        this.callType = callType;
     }
 
     public String getOperation() {
@@ -41,11 +42,11 @@ public class RemoteCallIdentifier implements Serializable {
     }
 
     public Long getCallNumber() {
-        return call_number;
+        return callNumber;
     }
 
-    public void setCallNumber(Long call_number) {
-        this.call_number = call_number;
+    public void setCallNumber(Long callNumber) {
+        this.callNumber = callNumber;
     }
 
     public int getSize() {
@@ -54,6 +55,6 @@ public class RemoteCallIdentifier implements Serializable {
 
     @Override
     public String toString() {
-        return "RemoteCallIdentifier(" + call_type + ", " + operation + ", " + call_number + ")";
+        return "RemoteCallIdentifier(" + callType + ", " + operation + ", " + callNumber + ")";
     }
 }

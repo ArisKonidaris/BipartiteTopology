@@ -1,8 +1,8 @@
 package BipartiteTopologyAPI;
 
-import BipartiteTopologyAPI.network.Mergeable;
-import BipartiteTopologyAPI.network.Network;
-import BipartiteTopologyAPI.network.Node;
+import BipartiteTopologyAPI.interfaces.Mergeable;
+import BipartiteTopologyAPI.interfaces.Network;
+import BipartiteTopologyAPI.interfaces.Node;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
 import BipartiteTopologyAPI.sites.NodeId;
 

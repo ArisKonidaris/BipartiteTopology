@@ -1,15 +1,15 @@
 package BipartiteTopologyAPI;
 
-import com.fasterxml.uuid.Generators;
 import BipartiteTopologyAPI.annotations.RemoteOp;
-import BipartiteTopologyAPI.futures.FutureResponse;
 import BipartiteTopologyAPI.futures.FuturePool;
+import BipartiteTopologyAPI.futures.FutureResponse;
 import BipartiteTopologyAPI.futures.Response;
+import BipartiteTopologyAPI.interfaces.Network;
 import BipartiteTopologyAPI.operations.CallType;
 import BipartiteTopologyAPI.operations.RemoteCallIdentifier;
-import BipartiteTopologyAPI.network.Network;
 import BipartiteTopologyAPI.sites.NodeId;
 import BipartiteTopologyAPI.sites.NodeType;
+import com.fasterxml.uuid.Generators;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -45,6 +45,9 @@ public class GenericProxy implements InvocationHandler, Serializable {
      */
     private Map<Method, String> methodIds;
 
+    /** The names of the proxied methods */
+    private ArrayList<String> methodNames;
+
     @Override
     public Object invoke(Object o, Method method, Object[] args) {
         Response<Serializable> response = null;
@@ -65,7 +68,18 @@ public class GenericProxy implements InvocationHandler, Serializable {
                         newFutures.put(i, newFuture);
                         nodeWrapper.getNewFutures().add(newFuture);
                     }
+                    assert !nodeWrapper.getFutures().containsKey(futureCounter);
                     nodeWrapper.getFutures().put(futureCounter, newFutures);
+//                    else {
+//                        Map<Integer, FutureResponse<Serializable>> existingFutures = nodeWrapper.getFutures().get(futureCounter);
+//                        for (Map.Entry<Integer, FutureResponse<Serializable>> workerFuture : newFutures.entrySet()) {
+//                            if (!existingFutures.containsKey(workerFuture.getKey())) {
+//                                existingFutures.put(workerFuture.getKey(), workerFuture.getValue());
+//                            } else {
+//
+//                            }
+//                        }
+//                    }
                     response = new FuturePool<>(newFutures.values());
                     rpc.setCallType(CallType.TWO_WAY);
                     rpc.setCallNumber(futureCounter);
@@ -80,13 +94,20 @@ public class GenericProxy implements InvocationHandler, Serializable {
                 for (int i = 0; i < targets; i++) {
                     rpcs.put(new NodeId((isSpoke()) ? NodeType.HUB : NodeType.SPOKE, i), rpc);
                 }
+//                System.out.println("-> RPCS: " + rpcs); //////////////////////////////////
                 network.broadcast(nodeWrapper.getNodeId(), rpcs, args);
             } else {
                 if (hasResponse) {
                     response = new FutureResponse<>();
-                    Map<Integer, FutureResponse<Serializable>> newFuture = new HashMap<>();
-                    newFuture.put(target.getNodeId(), (FutureResponse<Serializable>) response);
-                    nodeWrapper.getFutures().put(futureCounter, newFuture);
+                    if (!nodeWrapper.getFutures().containsKey(futureCounter)) {
+                        Map<Integer, FutureResponse<Serializable>> newFuture = new HashMap<>();
+                        newFuture.put(target.getNodeId(), (FutureResponse<Serializable>) response);
+                        nodeWrapper.getFutures().put(futureCounter, newFuture);
+                    } else {
+                        assert !nodeWrapper.getFutures().get(futureCounter).containsKey(target.getNodeId());
+                        nodeWrapper.getFutures().get(futureCounter)
+                                .put(target.getNodeId(), (FutureResponse<Serializable>) response);
+                    }
                     nodeWrapper.getNewFutures().add((FutureResponse<Serializable>) response);
                     rpc.setCallType(CallType.TWO_WAY);
                     rpc.setCallNumber(futureCounter);
@@ -112,6 +133,7 @@ public class GenericProxy implements InvocationHandler, Serializable {
         this.target = target;
         futureCounter = 0L;
         methodIds = new HashMap<>();
+        methodNames = new ArrayList<>();
 
         ArrayList<Method> methods = new ArrayList<>(Arrays.asList(rmtIf.getDeclaredMethods()));
         for (Method method : methods) {
@@ -126,10 +148,10 @@ public class GenericProxy implements InvocationHandler, Serializable {
             NodeClass.check(method.getReturnType() == void.class || method.getReturnType() == Response.class,
                     "Return type is not void request method %s of remote proxy %s",
                     method, rmtIf);
-            methodIds.put(method, Generators.nameBasedGenerator()
-                    .generate(method.getName() + Arrays.toString(method.getParameterTypes()))
-                    .toString()
-            );
+            String methodName = method.getName() + Arrays.toString(method.getParameterTypes());
+            String methodId = Generators.nameBasedGenerator().generate(methodName).toString();
+            methodIds.put(method, methodId);
+            methodNames.add(methodName);
         }
     }
 
