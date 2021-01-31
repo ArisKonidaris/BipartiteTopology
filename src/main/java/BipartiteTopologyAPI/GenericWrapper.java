@@ -210,7 +210,6 @@ public class GenericWrapper implements Node {
 
     @Override
     public void receiveMsg(NodeId source, RemoteCallIdentifier rpc, Serializable tuple) {
-//        System.out.println("\nNode " + getNodeId() + " received rpc " + rpc + " from node " + source);
         if (nonEmpty()) {
             try {
                 currentCaller = source;

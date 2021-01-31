@@ -36,13 +36,14 @@ public class NodeClass implements Serializable {
         createProxyClass();
     }
 
-    /*
-        Set `proxyInterface` to a unique proxy interface that is implemented by the
-        class.
-
-        A proxy interface is an interface such that either:
-        (a) its definition is decorated with @RemoteProxy, or
-        (b) its use request the class is decorated with @Remote
+    /**
+     * Set `proxyInterface` to a unique proxy interface that is implemented by the class.
+     *
+     * A proxy interface is an interface such that either:
+     * <ul>
+     *     <li>Its definition is decorated with @RemoteProxy, or<li/>
+     *     <li>Its use request the class is decorated with @Remote<li/>
+     * </ul>
      */
     protected void extractProxyInterface() {
         // get remote interface
@@ -84,14 +85,16 @@ public class NodeClass implements Serializable {
         return getInterfaces(c).contains(Serializable.class);
     }
 
-
-    /*
-        Check a remote method of proxyInterface:
-        * is annotated with @RemoteOp
-        * every non-@Response parameter must be Serializable
-        * if the first parameter is annotated with @Response then it must be
-          of type java.util.function.Consumer
-        * return type must be void
+    /**
+     * Check a remote method of proxyInterface:
+     * <ul>
+     *      <li>Is annotated with @RemoteOp</li>
+     *      <li>Every non-@Response parameter must be Serializable</li>
+     *      <li>If the first parameter is annotated with @Response then it must be of type java.util.function.Consumer</li>
+     *      <li>Return type must be void</li>
+     * <ul/>
+     *
+     * @param m The method to be checked.
      */
     public void checkRemoteMethod(Method m) {
 
@@ -113,10 +116,12 @@ public class NodeClass implements Serializable {
                 m, proxiedInterface);
     }
 
-    /*
-        Check the methods of remoteInterface.
-        * Each method is given to checkRemoteMethod
-        * All @RemoteOp operation ids are unique
+    /**
+     * Check the methods of remoteInterface.
+     * <ul>
+     *     <li>Each method is given to checkRemoteMethod</li>
+     *     <li>All @RemoteOp operation ids are unique</li>
+     * <ul/>
      */
     public void checkRemoteMethods() {
         assert proxiedInterface != null;
@@ -143,7 +148,7 @@ public class NodeClass implements Serializable {
                         e);
             }
 
-            // add to operation table
+            // Add to operation table.
             op2method.put(method_identifier, m);
         }
         operationTable = op2method;
@@ -164,8 +169,8 @@ public class NodeClass implements Serializable {
         return process_method;
     }
 
-    /*
-        Create a dynamic proxy class for the proxied interface
+    /**
+     * Create a dynamic proxy class for the proxied interface.
      */
     public void createProxyClass() {
         assert proxiedInterface != null;
@@ -181,8 +186,8 @@ public class NodeClass implements Serializable {
 
     static protected HashMap<Class<?>, NodeClass> instances = new HashMap<>();
 
-    /*
-        Caching instances
+    /**
+     * Caching instances.
      */
     synchronized static public NodeClass forClass(Class<?> _wclass) {
         if (instances.containsKey(_wclass))
