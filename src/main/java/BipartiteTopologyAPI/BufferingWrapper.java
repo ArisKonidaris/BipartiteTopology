@@ -13,7 +13,7 @@ import java.util.Iterator;
 
 public class BufferingWrapper<D extends Serializable> extends GenericWrapper {
 
-    private int maxBufferSize = 60000;
+    private int maxBufferSize = 1000000;
     private ArrayDeque<D> dataBuffer;
     private double meanBufferSize = 0;
     private long tuplesProcessed = 0;
