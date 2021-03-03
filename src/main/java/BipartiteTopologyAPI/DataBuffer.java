@@ -3,6 +3,10 @@ package BipartiteTopologyAPI;
 import BipartiteTopologyAPI.interfaces.Mergeable;
 import java.io.Serializable;
 
+/**
+ * An interface for buffering data.
+ * @param <T> The type of data to be buffered.
+ */
 public interface DataBuffer<T extends Serializable> extends Mergeable, Serializable {
 
     /**
