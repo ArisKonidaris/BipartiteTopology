@@ -18,6 +18,9 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 
+/**
+ * A Generic Proxy.
+ */
 public class GenericProxy implements InvocationHandler, Serializable {
 
     /**
