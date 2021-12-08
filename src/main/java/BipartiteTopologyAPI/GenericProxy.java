@@ -73,16 +73,6 @@ public class GenericProxy implements InvocationHandler, Serializable {
                     }
                     assert !nodeWrapper.getFutures().containsKey(futureCounter);
                     nodeWrapper.getFutures().put(futureCounter, newFutures);
-//                    else {
-//                        Map<Integer, FutureResponse<Serializable>> existingFutures = nodeWrapper.getFutures().get(futureCounter);
-//                        for (Map.Entry<Integer, FutureResponse<Serializable>> workerFuture : newFutures.entrySet()) {
-//                            if (!existingFutures.containsKey(workerFuture.getKey())) {
-//                                existingFutures.put(workerFuture.getKey(), workerFuture.getValue());
-//                            } else {
-//
-//                            }
-//                        }
-//                    }
                     response = new FuturePool<>(newFutures.values());
                     rpc.setCallType(CallType.TWO_WAY);
                     rpc.setCallNumber(futureCounter);
@@ -97,7 +87,6 @@ public class GenericProxy implements InvocationHandler, Serializable {
                 for (int i = 0; i < targets; i++) {
                     rpcs.put(new NodeId((isSpoke()) ? NodeType.HUB : NodeType.SPOKE, i), rpc);
                 }
-//                System.out.println("-> RPCS: " + rpcs); //////////////////////////////////
                 network.broadcast(nodeWrapper.getNodeId(), rpcs, args);
             } else {
                 if (hasResponse) {

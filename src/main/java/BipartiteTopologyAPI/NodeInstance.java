@@ -38,7 +38,7 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
     private boolean broadcasted = false;
 
     /**
-     * A private method that used Java Reflection in order to set up a promise.
+     * A private method that uses Java Reflection in order to set up a promise.
      *
      * @param promise The promise to be set up.
      */

@@ -1,7 +1,7 @@
 package BipartiteTopologyAPI.sites;
 
 /**
- * An class describing the simple Bipartite Network.
+ * An class describing a simple Bipartite Network.
  */
 public class NetworkDescriptor {
 

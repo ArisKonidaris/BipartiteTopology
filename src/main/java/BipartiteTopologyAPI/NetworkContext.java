@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A final class containing all the information of a node connected to the Bipartite Network.
+ * A final class containing all the information of a node connected to the Bipartite Network. This class is the holder
+ * of all the proxies for the disjoint remote nodes.
  *
  * @param <ProxyIfc> The interface for the proxy of the disjoint remote nodes.
  * @param <QueryIfc> The interface of the querier.
