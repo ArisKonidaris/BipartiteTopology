@@ -39,11 +39,6 @@ public class GenericProxy implements InvocationHandler, Serializable {
     private final NodeId target;
 
     /**
-     * A counter for identifying the responses of the remote nodes.
-     */
-    private long futureCounter;
-
-    /**
      * The ids of the proxied methods.
      */
     private Map<Method, String> methodIds;
@@ -71,15 +66,12 @@ public class GenericProxy implements InvocationHandler, Serializable {
                         newFutures.put(i, newFuture);
                         nodeWrapper.getNewFutures().add(newFuture);
                     }
-                    assert !nodeWrapper.getFutures().containsKey(futureCounter);
-                    nodeWrapper.getFutures().put(futureCounter, newFutures);
+                    assert !nodeWrapper.getFutures().containsKey(nodeWrapper.getFutureCounter());
+                    nodeWrapper.getFutures().put(nodeWrapper.getFutureCounter(), newFutures);
                     response = new FuturePool<>(newFutures.values());
                     rpc.setCallType(CallType.TWO_WAY);
-                    rpc.setCallNumber(futureCounter);
-                    if (futureCounter == Long.MAX_VALUE)
-                        futureCounter = 0L;
-                    else
-                        futureCounter++;
+                    rpc.setCallNumber(nodeWrapper.getFutureCounter());
+                    nodeWrapper.incrementFutureCounter();
                 } else {
                     rpc.setCallType(CallType.ONE_WAY);
                 }
@@ -91,22 +83,14 @@ public class GenericProxy implements InvocationHandler, Serializable {
             } else {
                 if (hasResponse) {
                     response = new FutureResponse<>();
-                    if (!nodeWrapper.getFutures().containsKey(futureCounter)) {
-                        Map<Integer, FutureResponse<Serializable>> newFuture = new HashMap<>();
-                        newFuture.put(target.getNodeId(), (FutureResponse<Serializable>) response);
-                        nodeWrapper.getFutures().put(futureCounter, newFuture);
-                    } else {
-                        assert !nodeWrapper.getFutures().get(futureCounter).containsKey(target.getNodeId());
-                        nodeWrapper.getFutures().get(futureCounter)
-                                .put(target.getNodeId(), (FutureResponse<Serializable>) response);
-                    }
+                    assert  !nodeWrapper.getFutures().containsKey(nodeWrapper.getFutureCounter());
+                    Map<Integer, FutureResponse<Serializable>> newFuture = new HashMap<>();
+                    newFuture.put(target.getNodeId(), (FutureResponse<Serializable>) response);
+                    nodeWrapper.getFutures().put(nodeWrapper.getFutureCounter(), newFuture);
                     nodeWrapper.getNewFutures().add((FutureResponse<Serializable>) response);
                     rpc.setCallType(CallType.TWO_WAY);
-                    rpc.setCallNumber(futureCounter);
-                    if (futureCounter == Long.MAX_VALUE)
-                        futureCounter = 0L;
-                    else
-                        futureCounter++;
+                    rpc.setCallNumber(nodeWrapper.getFutureCounter());
+                    nodeWrapper.incrementFutureCounter();
                 } else {
                     rpc.setCallType(CallType.ONE_WAY);
                 }
@@ -123,7 +107,6 @@ public class GenericProxy implements InvocationHandler, Serializable {
         this.nodeWrapper = node_wrapper;
         this.network = network;
         this.target = target;
-        futureCounter = 0L;
         methodIds = new HashMap<>();
         methodNames = new ArrayList<>();
 
@@ -175,10 +158,6 @@ public class GenericProxy implements InvocationHandler, Serializable {
 
     public NodeId getTarget() {
         return target;
-    }
-
-    public long getFutureCounter() {
-        return futureCounter;
     }
 
     public Map<Method, String> getMethodIds() {

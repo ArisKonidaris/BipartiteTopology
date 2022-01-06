@@ -53,12 +53,12 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
     /**
      * A map of promises that this node has made to the disjoint nodes of the Bipartite Graph.
      */
-    public final HashMap<Integer, HashMap<Integer, PromiseResponse>> promises;
+    public final HashMap<Integer, HashMap<Long, PromiseResponse>> promises;
 
     /**
      * A map of promises that this node has made to the disjoint nodes of the Bipartite Graph.
      */
-    public final HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises;
+    public final HashMap<Integer, HashMap<Long, PromiseResponse>> broadcastPromises;
 
     private NetworkContext(int networkId,
                            int numberOfHubs,
@@ -67,8 +67,8 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
                            QueryIfc querier,
                            Map<Integer, ProxyIfc> proxies,
                            ProxyIfc broadcastProxy,
-                           HashMap<Integer, HashMap<Integer, PromiseResponse>> promises,
-                           HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises) {
+                           HashMap<Integer, HashMap<Long, PromiseResponse>> promises,
+                           HashMap<Integer, HashMap<Long, PromiseResponse>> broadcastPromises) {
         this.networkId = networkId;
         this.numberOfHubs = numberOfHubs;
         this.numberOfSpokes = numberOfSpokes;
@@ -105,8 +105,8 @@ public final class NetworkContext<ProxyIfc, QueryIfc> implements Serializable {
                                                                       QuIfc querier,
                                                                       Map<Integer, PrIfc> proxies,
                                                                       PrIfc broadcastProxy,
-                                                                      HashMap<Integer, HashMap<Integer, PromiseResponse>> promises,
-                                                                      HashMap<Integer, HashMap<Integer, PromiseResponse>> broadcastPromises) {
+                                                                      HashMap<Integer, HashMap<Long, PromiseResponse>> promises,
+                                                                      HashMap<Integer, HashMap<Long, PromiseResponse>> broadcastPromises) {
         return new NetworkContext<>(networkId,
                 numberOfHubs,
                 numberOfSpokes,

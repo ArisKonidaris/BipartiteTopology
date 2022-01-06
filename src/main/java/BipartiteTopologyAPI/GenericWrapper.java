@@ -85,6 +85,11 @@ public class GenericWrapper implements Node {
      */
     protected RemoteCallIdentifier currentRPC;
 
+    /**
+     * A counter for identifying the responses of the remote nodes.
+     */
+    private long futureCounter;
+
     public GenericWrapper(NodeId nodeId, NodeInstance node, Network network) {
         this.nodeId = nodeId;
         this.node = node;
@@ -96,6 +101,7 @@ public class GenericWrapper implements Node {
         broadcastProxy = null;
         proxyMap = new HashMap<>();
         processData = true;
+        futureCounter = 0;
         Injections();
         init();
 
@@ -411,6 +417,21 @@ public class GenericWrapper implements Node {
     public GenericWrapper setDefaultOp() {
         nodeClass.setDefaultMethod();
         return this;
+    }
+
+    public void setFutureCounter(long futureCounter) {
+        this.futureCounter = futureCounter;
+    }
+
+    public long getFutureCounter() {
+        return futureCounter;
+    }
+
+    public void incrementFutureCounter() {
+        if (futureCounter == Long.MAX_VALUE)
+            futureCounter = 0;
+        else
+            futureCounter++;
     }
 
     private void checkNewFutures() {

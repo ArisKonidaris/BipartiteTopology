@@ -37,6 +37,8 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
 
     private boolean broadcasted = false;
 
+    private long promiseId = 0;
+
     /**
      * A private method that uses Java Reflection in order to set up a promise.
      *
@@ -67,28 +69,27 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
 
     /**
      * A method used by the user when it makes a promise to a disjoint remote node of the Bipartite Network graph. This
-     * should be used when the current node does not posses the answer to a question of a disjoint remote node, but will
-     * arrive (or produced) at a later time. When the answer(s) is (are) available, then {@link #fulfillPromises(List)}
-     * should be called by the user to send back the answer.
+     * should be used when the current node does not possess the answer to a question of a disjoint remote node, but will
+     * arrive (or produced) at a later time. When the answer(s) is (are) available, then
+     * {@link #fulfillPromise(Pair, Serializable[])} or {@link #fulfillPromises(List)} should be called by the user to
+     * send back the answer.
      *
-     * @return The pair with the id of the disjoint node that invoked this node instance along with the promise id that
-     * it was made to it.
+     * @return The promise that was made.
      */
     public <T extends Serializable> PromiseResponse<T> makePromise() {
         PromiseResponse<T> promise = new PromiseResponse<>();
         setPromise(promise);
-        int promiseId = 0;
         if (!networkContext.promises.containsKey(getCurrentCaller()))
             networkContext.promises.put(getCurrentCaller(), new HashMap<>());
-        else
-            promiseId = networkContext.promises.get(getCurrentCaller()).size() + 1;
         networkContext.promises.get(getCurrentCaller()).put(promiseId, promise);
+        incrementPromiseId();
         return promise;
     }
 
     /**
      * This method fulfills the promises given by the current node to the disjoint remote node of the Bipartite Network.
      *
+     * @param nodeId The remote node that the promises were made to.
      * @param answers The answers to the promises made to the disjoint remote node of the Bipartite Network.
      */
     public <T extends Serializable> PromisedResponses<T> fulfillPromises(int nodeId, List<T> answers)
@@ -126,9 +127,10 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
      */
     public void fulfillPromise(Pair<Integer, Integer> destination, Serializable[] answer) {
         if (networkContext.promises.containsKey(destination.getKey())) {
-            HashMap<Integer, PromiseResponse> promises = networkContext.promises.get(destination.getKey());
+            HashMap<Long, PromiseResponse> promises = networkContext.promises.get(destination.getKey());
             if (promises.containsKey(destination.getValue())) {
                 promises.get(destination.getValue()).sendAnswer(answer);
+                promises.remove(destination.getValue());
             } else {
                 throw new RuntimeException("The " +
                         ((genericWrapper.nodeId.isHub()) ? "Hub " : "Spoke ") + getNodeId() + " of network " +
@@ -149,24 +151,23 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
 
     /**
      * A method used by the user when it makes a broadcast promise to a disjoint remote node of the Bipartite Network.
-     * This should be used when the answer for a specific node is the same for all the disjoint nodes, but do not posses
-     * it yet. When the answer is available, {@link #fulfillBroadcastPromises(List)} should be called to broadcast the
-     * answer to all the disjoint nodes.
+     * It is basically a subscription function that subscribes a remote node to a broadcast response. This should be
+     * used when the answer for a specific node is the same for all the disjoint nodes, but do not possess it yet. When
+     * the answer is available, {@link #fulfillBroadcastPromises(List)} should be called to broadcast the answer to all
+     * the disjoint nodes.
      */
     public <T extends Serializable> PromiseResponse<T> makeBroadcastPromise() {
         if (broadcasted) {
-            for (HashMap<Integer, PromiseResponse> bPromises : networkContext.broadcastPromises.values())
+            for (HashMap<Long, PromiseResponse> bPromises : networkContext.broadcastPromises.values())
                 bPromises.clear();
             broadcasted = false;
         }
         PromiseResponse<T> promise = new PromiseResponse<>();
         setPromise(promise);
-        int promiseId = 0;
         if (!networkContext.broadcastPromises.containsKey(getCurrentCaller()))
             networkContext.broadcastPromises.put(getCurrentCaller(), new HashMap<>());
-        else
-            promiseId = networkContext.broadcastPromises.get(getCurrentCaller()).size() + 1;
         networkContext.broadcastPromises.get(getCurrentCaller()).put(promiseId, promise);
+        incrementPromiseId();
         return promise;
     }
 
@@ -198,9 +199,8 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
                 Network net = (Network) networkField.get(r);
                 NodeId src = (NodeId) sourceField.get(r);
 
-
                 ArrayList<ArrayList<PromiseResponse>> pr = new ArrayList<>();
-                for (HashMap<Integer, PromiseResponse> entry : networkContext.broadcastPromises.values())
+                for (HashMap<Long, PromiseResponse> entry : networkContext.broadcastPromises.values())
                     pr.add(new ArrayList<>(entry.values()));
                 ArrayList<BroadcastValueResponse<T>> bResponses = new ArrayList<>();
                 for (int i = 0; i < pr.get(0).size(); i++) {
@@ -265,6 +265,13 @@ public abstract class NodeInstance<ProxyIfc, QueryIfc> {
 
     public void unblockStream() {
         genericWrapper.unblock();
+    }
+
+    private void incrementPromiseId() {
+        if (promiseId == Long.MAX_VALUE)
+            promiseId = 0;
+        else
+            promiseId += 1;
     }
 
 }
